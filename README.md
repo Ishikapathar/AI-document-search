@@ -11,6 +11,8 @@ A smart AI assistant powered by LangChain and LangGraph that searches through yo
 - **Smart PDF Switching**: Automatically clears old documents when uploading new ones
 - **Real-time Chat**: Streaming responses with source citations
 - **New Conversation Button**: Quickly start fresh conversations
+  <img width="1872" height="869" alt="image" src="https://github.com/user-attachments/assets/c4df44b4-afe5-4c00-aabf-3641ce404559" />
+
 
 ## 🚀 Quick Start
 
