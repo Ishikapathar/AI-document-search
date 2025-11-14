@@ -234,10 +234,14 @@ export default function Home() {
         throw new Error(data.error || 'Failed to upload files');
       }
 
-      setFiles((prev) => [...prev, ...selectedFiles]);
+      setFiles(selectedFiles);
+      setMessages([]);
+      // Create a new thread for this PDF
+      const newThread = await client.createThread();
+      setThreadId(newThread.thread_id);
       toast({
         title: 'Success',
-        description: `${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''} uploaded successfully`,
+        description: `${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''} uploaded successfully. New conversation started!`,
         variant: 'default',
       });
     } catch (error) {
@@ -266,51 +270,170 @@ export default function Home() {
     });
   };
 
-  return (
-    <main className="flex min-h-screen flex-col items-center p-4 md:p-24 max-w-5xl mx-auto w-full">
-      {messages.length === 0 ? (
-        <>
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <p className="font-medium text-muted-foreground max-w-md mx-auto">
-                This ai chatbot is an example template to accompany the book:{' '}
-                <a
-                  href="https://www.oreilly.com/library/view/learning-langchain/9781098167271/"
-                  className="underline hover:text-foreground"
-                >
-                  Learning LangChain (O'Reilly): Building AI and LLM
-                  applications with LangChain and LangGraph
-                </a>
-              </p>
-            </div>
-          </div>
-          <ExamplePrompts onPromptSelect={setInput} />
-        </>
-      ) : (
-        <div className="w-full space-y-4 mb-20">
-          {messages.map((message, i) => (
-            <ChatMessage key={i} message={message} />
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-      )}
+  const handleClearAllFiles = () => {
+    setFiles([]);
+    setMessages([]);
+    setInput('');
+    // Create a new thread for fresh context
+    const initNewThread = async () => {
+      try {
+        const thread = await client.createThread();
+        setThreadId(thread.thread_id);
+      } catch (error) {
+        console.error('Error creating new thread:', error);
+      }
+    };
+    initNewThread();
+    toast({
+      title: 'Files cleared',
+      description: 'All files and conversation cleared. Ready for new PDF!',
+      variant: 'default',
+    });
+  };
 
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background">
+  return (
+    <main className="flex min-h-screen flex-col items-center bg-gradient-to-br from-blue-950 via-blue-900 to-slate-900">
+      <div className="w-full max-w-5xl mx-auto p-4 md:p-8">
+        {/* Header */}
+        <div className="text-center py-6 mb-4 flex justify-between items-center">
+          <div className="flex-1">
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+              AI Document Search
+            </h1>
+            <p className="text-sm text-blue-200 max-w-2xl mx-auto">
+              Powered by LangChain & LangGraph
+            </p>
+          </div>
+          {messages.length > 0 && (
+            <Button
+              onClick={() => {
+                setMessages([]);
+                setInput('');
+                setFiles([]);
+                const initNewThread = async () => {
+                  try {
+                    const thread = await client.createThread();
+                    setThreadId(thread.thread_id);
+                  } catch (error) {
+                    console.error('Error creating new thread:', error);
+                  }
+                };
+                initNewThread();
+                toast({
+                  title: 'New conversation started',
+                  description: 'All messages and files cleared',
+                  variant: 'default',
+                });
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white text-sm"
+            >
+              New Conversation
+            </Button>
+          )}
+        </div>
+
+        {messages.length === 0 ? (
+          <>
+            <div className="flex-1 flex items-center justify-center min-h-[400px]">
+              <Card className="max-w-2xl mx-auto shadow-2xl border-blue-800 bg-blue-900/40 backdrop-blur">
+                <CardContent className="p-8">
+                  <div className="text-center space-y-6">
+                    <div className="w-16 h-16 mx-auto bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
+                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold mb-3 text-white">What I Can Do For You</h2>
+                      <div className="text-left space-y-2 text-white/90">
+                        <div className="flex items-start gap-2">
+                          <span className="text-blue-400 mt-1">📄</span>
+                          <p className="text-sm">Upload and analyze PDF documents instantly</p>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <span className="text-blue-400 mt-1">💬</span>
+                          <p className="text-sm">Ask questions about your document content</p>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <span className="text-blue-400 mt-1">🎯</span>
+                          <p className="text-sm">Get AI-powered answers with source citations</p>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <span className="text-blue-400 mt-1">🔍</span>
+                          <p className="text-sm">Search and extract information quickly</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="pt-4 border-t border-blue-700">
+                      <p className="text-xs text-blue-300">
+                        Example template for{' '}
+                        <a
+                          href="https://www.oreilly.com/library/view/learning-langchain/9781098167271/"
+                          className="text-blue-400 hover:text-blue-300 underline font-medium"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Learning LangChain (O'Reilly)
+                        </a>
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            <div className="mt-8">
+              <ExamplePrompts onPromptSelect={setInput} />
+            </div>
+          </>
+        ) : (
+          <div className="w-full space-y-4 mb-32 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
+            {messages.map((message, i) => (
+              <ChatMessage 
+                key={i} 
+                message={message}
+                onEdit={message.role === 'user' ? (newContent: string) => {
+                  const updatedMessages = [...messages];
+                  updatedMessages[i].content = newContent;
+                  setMessages(updatedMessages);
+                } : undefined}
+              />
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+        )}
+      </div>
+
+      {/* Enhanced Input Area */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-blue-950 via-blue-950 to-transparent backdrop-blur-sm border-t border-blue-800">
         <div className="max-w-5xl mx-auto space-y-4">
           {files.length > 0 && (
-            <div className="grid grid-cols-3 gap-2">
-              {files.map((file, index) => (
-                <FilePreview
-                  key={`${file.name}-${index}`}
-                  file={file}
-                  onRemove={() => handleRemoveFile(file)}
-                />
-              ))}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-blue-300">Uploaded files:</p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearAllFiles}
+                  className="text-xs text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                >
+                  Clear All
+                </Button>
+              </div>
+              <div className="grid grid-cols-3 gap-2 animate-in slide-in-from-bottom">
+                {files.map((file, index) => (
+                  <FilePreview
+                    key={`${file.name}-${index}`}
+                    file={file}
+                    onRemove={() => handleRemoveFile(file)}
+                  />
+                ))}
+              </div>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="relative">
-            <div className="flex gap-2 border rounded-md overflow-hidden bg-gray-50">
+            <div className="flex gap-2 border-2 border-blue-700 rounded-2xl overflow-hidden bg-blue-900/50 shadow-lg hover:shadow-xl transition-shadow">
               <input
                 type="file"
                 ref={fileInputRef}
@@ -323,39 +446,39 @@ export default function Home() {
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="rounded-none h-12"
+                className="rounded-none h-14 hover:bg-blue-800 transition-colors text-white"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading}
+                title="Upload PDF"
               >
                 {isUploading ? (
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  </div>
+                  <Loader2 className="h-5 w-5 animate-spin text-blue-400" />
                 ) : (
-                  <Paperclip className="h-4 w-4" />
+                  <Paperclip className="h-5 w-5 text-blue-200" />
                 )}
               </Button>
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={
-                  isUploading ? 'Uploading PDF...' : 'Send a message...'
+                  isUploading ? 'Uploading PDF...' : 'Ask me anything about your documents...'
                 }
-                className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 h-12 bg-transparent"
-                disabled={isUploading || isLoading || !threadId}
+                className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 h-14 bg-transparent text-base text-white placeholder:text-blue-300"
+                disabled={isUploading || isLoading}
               />
               <Button
                 type="submit"
                 size="icon"
-                className="rounded-none h-12"
+                className="rounded-none h-14 w-14 bg-blue-600 hover:bg-blue-700 transition-all"
                 disabled={
-                  !input.trim() || isUploading || isLoading || !threadId
+                  !input.trim() || isUploading || isLoading
                 }
+                title="Send message"
               >
                 {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
-                  <ArrowUp className="h-4 w-4" />
+                  <ArrowUp className="h-5 w-5" />
                 )}
               </Button>
             </div>

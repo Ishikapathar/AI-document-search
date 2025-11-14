@@ -1,8 +1,9 @@
-import { Copy } from 'lucide-react';
+import { Copy, Edit2, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useState } from 'react';
 import { PDFDocument } from '@/types/graphTypes';
+import { Input } from '@/components/ui/input';
 import {
   Accordion,
   AccordionContent,
@@ -16,11 +17,14 @@ interface ChatMessageProps {
     content: string;
     sources?: PDFDocument[];
   };
+  onEdit?: (newContent: string) => void;
 }
 
-export function ChatMessage({ message }: ChatMessageProps) {
+export function ChatMessage({ message, onEdit }: ChatMessageProps) {
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState(message.content);
   const isLoading = message.role === 'assistant' && message.content === '';
 
   const handleCopy = async () => {
@@ -31,6 +35,18 @@ export function ChatMessage({ message }: ChatMessageProps) {
     } catch (err) {
       console.error('Failed to copy text:', err);
     }
+  };
+
+  const handleSaveEdit = () => {
+    if (onEdit && editedContent.trim()) {
+      onEdit(editedContent);
+      setIsEditing(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditedContent(message.content);
+    setIsEditing(false);
   };
 
   const showSources =
@@ -51,21 +67,64 @@ export function ChatMessage({ message }: ChatMessageProps) {
           </div>
         ) : (
           <>
-            <p className="whitespace-pre-wrap">{message.content}</p>
-            {!isUser && (
-              <div className="flex gap-2 mt-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={handleCopy}
-                  title={copied ? 'Copied!' : 'Copy to clipboard'}
-                >
-                  <Copy
-                    className={`h-4 w-4 ${copied ? 'text-green-500' : ''}`}
-                  />
-                </Button>
+            {isEditing ? (
+              <div className="space-y-2">
+                <Input
+                  value={editedContent}
+                  onChange={(e) => setEditedContent(e.target.value)}
+                  className="w-full bg-white text-black"
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={handleSaveEdit}
+                    className="h-8"
+                  >
+                    <Check className="h-4 w-4 mr-1" />
+                    Save
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleCancelEdit}
+                    className="h-8"
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Cancel
+                  </Button>
+                </div>
               </div>
+            ) : (
+              <>
+                <p className="whitespace-pre-wrap">{message.content}</p>
+                <div className="flex gap-2 mt-2">
+                  {isUser && onEdit && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setIsEditing(true)}
+                      title="Edit message"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {!isUser && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={handleCopy}
+                      title={copied ? 'Copied!' : 'Copy to clipboard'}
+                    >
+                      <Copy
+                        className={`h-4 w-4 ${copied ? 'text-green-500' : ''}`}
+                      />
+                    </Button>
+                  )}
+                </div>
+              </>
             )}
             {showSources && message.sources && (
               <Accordion type="single" collapsible className="w-full mt-2">
